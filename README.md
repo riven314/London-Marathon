@@ -1,5 +1,8 @@
 #**London-Marathon**
 
+###Name
+Alex Lau
+
 ###Class
 _STAT3622 DATA VISUALIZATION (2016 Fall)_
 
