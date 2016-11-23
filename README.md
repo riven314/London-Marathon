@@ -1,9 +1,13 @@
 #**London-Marathon**
+
+###Class
+_STAT3622 DATA VISUALIZATION (2016 Fall)_
+
 ###Datasets Source
 _Marathon 2016_
 
-###Focus: 
-_Differences between a Good Runner (Higher Ranking) and a Bad Runner (Lower Ranking)_
+###Focus
+_Find out the Differences between a Good Runner (Higher Ranking) and a Bad Runner (Lower Ranking)_
 
 1. Does Age, Gender matter to their performance? 
 
@@ -11,5 +15,6 @@ _Differences between a Good Runner (Higher Ranking) and a Bad Runner (Lower Rank
 
 3. Anything for a Good Runner distinguishable from a Bad Runner?
 
-
+###Reason for This Topic?
+Because I love Running =D
 
