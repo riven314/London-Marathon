@@ -68,13 +68,16 @@ dashboardBody(
   tabItems(
     
     tabItem(
-      tabName= "ready",r
+      tabName= "ready",
         fluidPage(
-          titlePanel(h1("Go to the Github Link Below to Play my Shiny App")),
+          titlePanel(h1("")),
           mainPanel(
+            h1("Download Files from Github Link"),
             h3(a("https://github.com/riven314/London-Marathon.git")),
             code("ShinyApp(Marathon).R"),br(),
-            code("finalized_data.csv")
+            code("finalized_data.csv"),
+            h1("Or Run the Code R (With Shiny Library)"),
+            code('runGithub("London-Mararthon","riven314")')
           )
         )
     ),
