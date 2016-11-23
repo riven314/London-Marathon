@@ -20,19 +20,19 @@ library(reshape2)
 library(plotly)
 
 ## **All the time are in timezone Hongkong and the date is "2016-11-17"
-# finalized_POSIX <- read.csv("finalized_data.csv")
-# name_list <- c("RunnerNo","Name","Gender","Category","PlaceOverall","PlaceGender","PlaceCategory","5K","10K","15K","20K","21K","25K","30K","35K","40K","42K")
-# names(finalized_POSIX) <- name_list
-# finalized_POSIX[,2] <- as.character(finalized_POSIX[,2])
-# finalized_POSIX[,3] <- as.character(finalized_POSIX[,3])
-# finalized_POSIX[,4] <- as.character(finalized_POSIX[,4])
-# finalized_POSIX[,5] <- as.numeric(finalized_POSIX[,5])
-# finalized_POSIX[,6] <- as.numeric(finalized_POSIX[,6])
-# finalized_POSIX[,7] <- as.numeric(finalized_POSIX[,7])
-# 
-# for (i in 8:17) {
-#   finalized_POSIX[,i] <- as.POSIXct(finalized_POSIX[,i], format="%Y-%m-%d %H:%M:%S",tz="Hongkong")
-# }
+finalized_POSIX <- read.csv("finalized_data.csv")
+name_list <- c("RunnerNo","Name","Gender","Category","PlaceOverall","PlaceGender","PlaceCategory","5K","10K","15K","20K","21K","25K","30K","35K","40K","42K")
+names(finalized_POSIX) <- name_list
+finalized_POSIX[,2] <- as.character(finalized_POSIX[,2])
+finalized_POSIX[,3] <- as.character(finalized_POSIX[,3])
+finalized_POSIX[,4] <- as.character(finalized_POSIX[,4])
+finalized_POSIX[,5] <- as.numeric(finalized_POSIX[,5])
+finalized_POSIX[,6] <- as.numeric(finalized_POSIX[,6])
+finalized_POSIX[,7] <- as.numeric(finalized_POSIX[,7])
+
+for (i in 8:17) {
+  finalized_POSIX[,i] <- as.POSIXct(finalized_POSIX[,i], format="%Y-%m-%d %H:%M:%S",tz="Hongkong")
+}
 
 
 ui <- dashboardPage(
@@ -68,7 +68,7 @@ dashboardBody(
   tabItems(
     
     tabItem(
-      tabName= "ready",
+      tabName= "ready",r
         fluidPage(
           titlePanel(h1("Go to the Github Link Below to Play my Shiny App")),
           mainPanel(
