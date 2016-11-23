@@ -1,4 +1,4 @@
-#**London-Marathon (By Alex)**
+#**London-Marathon**
 
 
 ###Class
@@ -19,3 +19,4 @@ _Find out the Differences between a Good Runner (Higher Ranking) and a Bad Runne
 ###Reason for This Topic?
 Because I love Running and trying to take a Marathon. It may give me some insights on what makes a Good Runner =D
 
+`by ALEX`
