@@ -1,7 +1,5 @@
-#**London-Marathon**
+#**London-Marathon (By Alex)**
 
-###Name
-_Alex_
 
 ###Class
 _STAT3622 DATA VISUALIZATION (2016 Fall)_
