@@ -22,11 +22,13 @@ shinyUI(dashboardPage(
                 menuItem("Ready?", icon = icon("off",lib="glyphicon"), 
                          tabName = "ready",badgeColor = "green"),
                 menuItem("Boxplot", icon = icon("users"), 
-                         tabName = "box",badgeColor = "red"),
-                
+                         tabName = "box",badgeColor = "red"),                
+                menuItem("Speed vs Distance",icon=icon("flash",lib="glyphicon"),
+                        tabName="speed",badgeColor="yellow"),
+                menuItem("Speed vs Ranking",icon=icon("sort",lib="glyphicon"),
+                         tabName="ani_speed",badgeColor = "purple"),
                 menuItem("Ranking vs Time", icon = icon("glyphicon glyphicon-signal",lib="glyphicon"),
                          tabName = "ranking",badgeColor = "blue"),
-                
                 menuItem("Distance vs Time", icon = icon("random",lib="glyphicon"), 
                          tabName = "distance",badgeColor = "orange")
     )# glyphicon glyphicon-list
@@ -37,18 +39,49 @@ shinyUI(dashboardPage(
     
     
     tabItems(
-      
-      tabItem(
-        tabName= "ready",
-        fluidPage(
-          titlePanel(h1("Go to the Github Link Below to Play my Shiny App")),
-          mainPanel(
-            h3(a("https://github.com/riven314/London-Marathon.git")),
-            code("ShinyApp(Marathon).R"),br(),
-            code("finalized_data.csv")
+        
+        tabItem(
+          tabName = "speed",
+          fluidPage(
+            titlePanel(
+              
+              selectInput("graph",h4("Plot Type"),
+                          choices=c("Boxplot","Line"))
+            ),
+            mainPanel(
+              plotOutput("plot4")
+            )
+          )),   
+        
+        tabItem(
+          tabName = "ani_speed",
+          fluidPage(
+            titlePanel(
+              sliderInput("km",h4("Select a Phrase (Km)"),
+                          min=5,
+                          max=42,step=5,
+                          value=c(5),ticks=FALSE,animate=animationOptions(interval=2300,loop=TRUE))
+              
+            ),
+            mainPanel(
+              plotOutput("plot5")
+            )
+          )),
+        
+        tabItem(
+          tabName= "ready",
+          fluidPage(
+            titlePanel(h1("")),
+            mainPanel(
+              h1("Download Files from Github Link"),
+              h3(a("https://github.com/riven314/London-Marathon.git")),
+              code("ShinyApp(Marathon).R"),br(),
+              code("finalized_data.csv"),
+              h1("Or Run the Code R (With Shiny Library)"),
+              code('runGithub("London-Mararthon","riven314")')
+            )
           )
-        )
-      ),
+        ),
       
       ## For Boxplot Display
       tabItem(
