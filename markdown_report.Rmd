@@ -1,0 +1,543 @@
+---
+title: "$$Data  Analysis  on  London  Marathon$$"
+author: 
+  $$Lau Wan Hong (3035098070)$$
+  $$The Univeristy of Hong Kong$$
+  $$December 2016$$
+output:
+  html_document
+runtime: shiny
+---
+```{r include=FALSE}
+knitr::opts_chunk$set(fig.align = "center")
+```
+
+# Abstract:
+
+What makes a professional runners different from amateur? How will runners' performance vary during the Marathon race? This report aims to address the questions with the aid of data analysis on the performances of runners in London Marathon 2016. While it does not come to our surprise that a good runner tends to have a higher stability than amateur and demographic factors play a role on one's running performance, all levels of runners seem like to splint at the end on average. 
+
+
+
+# 1 Introduction
+While the research stems from my interest in Marathon, the finding is believed to have instrumental value to the general public, especially for those who are enthusiastic about running or Marathon because this research does not only offer positive and encouraging messages to them, but also some insights about the differences between a good runner and a bad runner.
+
+There is a similar analysis on Hong Kong Standarad Chartered Marathon 2016 in Kuggle, but the dataset for Hong Kong Standard Chartered Mararthon only has the time record at halfway and goal. Due to limited features offered, it is inconvenient for us to analysis how runners' speed varies over different intervals. Different from Hong Kong Standard Chartered Marathon, London Marathon provides more details on both demographic features and time records for different intervals of the runners. Therefore, more in-depth analysis could be performed with the dataset from London Marathon, especially analysis on speed allocation of a runner through the race.
+
+In the following session, data preprocessing stage will be firstly highlighted. This part summarizes the process of data preprocessing from data extraction, data cleaning, data validation and data manipulationm, together with a brief profile about the dataset and its background. Then, we will briefly introduce the methodology adopted by this research. After we have gone through the data preprocessing phrase, we will try to have exploratory analysis on our cleaned data. Some interesting findings will be demonstrated in this session. We will seek to draw some conclusions from our clearly visualized findings at the end. It should be noted that this research seeks to perform intuitive analysis with the application of data visualization. Therefore, there will not be much technical statistical analysis like statistical modeling, statistical inference and hypothesis testing involved.
+
+# 2 Data
+
+The dataset taken for this research is from London Marathon 2016. The Marathon was organized on 23th April 2016. There are many events available for the Marathon. This research focuses on one of the events - Club, Charity and Ballots . The events have over 39000 participants with variant age-groups, nationality. For this research, we will only consider gender and age group as the demographic attributes. Besides the features above, the dataset also contains time records of each runners for completing different intervals. The time is recorded for each interval of 5km til the end of the track, with additional recording on the halfway. Rankings for each runners are also available. The rankings are sorted by overall level, gender cateogory and different age groups. These rankings will be a reliable measurement on one's performance. For this research, we will mainly apply overall ranking as our measurement on Runners' performance.
+
+**Data Preprocessing:**
+
+Concerning data preprocessing stage, it is divided into data extraction, data manipulation,data cleaning and data validation. In the phrase of data extraction, web scraping is performed to extract data from the paginated offical website. Name lists of male participants and that of female participants are separated. Demographic characteristic for the runners and their time records for various intervals are also separated. Therefore, data merging need to be performed after data collection.
+
+Data manipulation, data cleaning and data validation will be highlighted in this report. For more details on how web scraping is performed, you could find the R scripts for it in the Web Scraping file. table_final.csv, full_agg.csv, list_female.csv and list_men.csv are the datasets generated from web scraping, features of these datasets are as follows:
+* table_final.csv:  contain demongraphic features with finish time and time record on halfway
+* full_agg.csv:     contain data on time records for various intervals
+* list_men.csv:     contain names and runner numbers for male runners
+* list_femle.csv:   contain names and runner numbers for femlae runners
+
+Data manipulation is firstly performed on these data sets. This session aims to give you a clear picture of how a completed dataset is generated. Some part of the codes will be embedded for demonstration. This session only mentions some of the key features during data preprocessing phrase. For the completed process, you could refer to the CleaningData.Rmd in Data Cleaning and Manipulation file.
+
+**Data Manipulation:**
+
+After data loading, redundant variables are deleted. Some variables are renamed and reordered. Time records for various intervals are defined as POSIXct class. Runner name and finish time are used as the primary keys for merging table_final.csv and full_agg.csv. Since runner names are not unique so finish time is used together with runner names as ID variables. Before merging, the runner names of table_final is formatted so that it is consistent with table_agg's. 
+```{r, include=FALSE}
+table_final <- read.csv("table_final.csv")
+table_agg <- read.csv("full_agg.csv")
+
+table_final <- table_final[,-c(1,6,11)]
+
+names1 <- c("PlaceOverall","PlaceGender","PlaceCategory","Name","RunnerNo","Category","K21","K42")
+names(table_final) <- names1
+names2 <- c("Name","K5","K10","K15","K20","K21","K25","K30","K35","K40","K42")
+names(table_agg) <- names2
+```
+
+```{r}
+table_agg[]<-lapply(table_agg, as.character)
+table_final[]<-lapply(table_final, as.character)
+
+for (i in 2:11) {
+  table_agg[,i] <- as.POSIXct(table_agg[,i], format = "%H:%M:%S")
+}
+for (i in 7:8) {
+  table_final[,i] <- as.POSIXct(table_final[,i], format = "%H:%M:%S")
+}
+
+# format runner names of table_final before merging
+table_final$Name <- sapply(table_final$Name, function(x) gsub('» ', '', x) )
+
+complete_table <- merge(table_agg,table_final,by=c("Name","K42"))
+```
+
+It is found that some of the observations are removed after data merging. The reason for it is that some runner names are inconsistent across the two data frame so that they are unable to be matched with each other. Since number of data removed is negligible compared with total number of data. For convenience, we do not seek to include these data into our complete dataset.
+```{r, include=FALSE}
+any(is.na(complete_table$Name))
+any(is.na(complete_table$K42))
+
+
+# delete duplicated col and rename the variable
+complete_table <- complete_table[,-17]
+colnames(complete_table)[7] <- "K21"
+
+# convert to numeric to some variables
+for (i in 12:15) {
+  complete_table[,i] <- as.numeric(complete_table[,i])
+}
+```
+
+
+The merged dataset did not have information on runners' gender so we need to fill in the runners' gender. To achieve that, we need a name list of male runners and female runners. We run the following commands to perform the task of filling up the gender of each runners:
+```{r}
+# Read the gender list
+list_female <- read.csv("list_female.csv",stringsAsFactors = F)
+list_male <- read.csv("list_men.csv",stringsAsFactors = F)
+
+# perform formatting on runner names (id variable)
+table_final$Name <- sapply(table_final$Name, function(x) gsub('» ', '', x) )
+
+# Create a gender column to fill in runners' gender
+list_female$Gender <- sapply(vector(mode="character",length = nrow(list_female)), function(x) x="F")
+list_male$Gender <- sapply(vector(mode="character",length = nrow(list_male)), function(x) x="M")
+
+# a full list of runner no. with gender is generated
+list_female <- list_female[,-1]
+list_male <- list_male[,-1]
+list_gender <- rbind(list_female,list_male)
+
+complete_table <- merge(x=complete_table, y=list_gender, by.x = 15,by.y = 1, all.x = TRUE)
+```
+It is found that the sum of the male runner names and female runner names are slightly less than the total number of data so there are small proportion of runners whose gender are unable to be determined. Again, these data are deleted because they are eligible to the total number of data for completed dataset.
+
+```{r, include=FALSE, message=FALSE}
+library(dplyr)
+```
+**Data Cleaning and Data Validation:**
+
+After the 4 datasets are merged together, missing values are removed. The number of observations with missing values is less than 3% of the total number of data so the removal is assumed to have little impact on the dataset. 
+
+After that, we need to examine if there are any incorrect information for some runners. We have to ensure that the overall ranking recorded is consistent with the finish time of the race. A runner spending less time finishing the race should have a higher ranking. If some runners have particular low overall ranking even though they have an outstanding performance on finish time, it indicates that some of the overall ranking records are incorrect. To validate the information, a simple validation test will be performed to check if there are any significant issue on the records of overall ranking. It should be noted that the algorithm for the validation test only seeks to perform a simple test on significant issue of overall ranking record. We assume that the minor issues of overall ranking record are caused by the fact that some runners have the same finish time and it gives little hinderance to our data analysis.
+```{r}
+# delete the missing values 
+complete_table <- na.omit(complete_table)
+
+# validate if the ranking is correct
+validate_ranking_order <- function(ranking_order) {
+  x=1
+  y <- as.vector("character")
+  for (i in 1:(nrow(ranking_order)-1) ) {
+    if (ranking_order[i,13] <= ranking_order[i+1,13]) {}
+    else if (abs(ranking_order[i,13]-ranking_order[i+1,13]) >20) {
+      y[x] <- ranking_order[i,2]
+      x=x+1
+    }
+  }
+  if (x==1) {print("No significant issue is found in ranking order")}
+  else {print("Some significant issue on ranking order is found")}
+}
+
+# No significant issue is found
+validate_ranking_order(complete_table[order(complete_table$K42,decreasing=F),])
+```
+
+
+When the order of overall ranking is validated, the complete dataset is cleaned by removing missing values. Number of data with missing values are less than 3% of the total number of data so, similar to the procedure above, data with missing values are deleted. 
+```{r}
+# check if there are NA
+any(is.na(complete_table))
+```
+
+```{r,include=FALSE}
+# rearrange the column 
+complete_table <- complete_table[,c(1,2,17,16,13,14,15,4,5,6,7,8,9,10,11,12,3)]
+```
+
+**Data Transformation:**
+
+We will create new variables of speed corresponding to the time records for different intervals. It should be noted that the unit of speed for this research is metres per minute. When we find out the speed of runners for different intervals, we use the most accurate distance for calculation so that the speed calculated is reliable for analysis. With this in mind, the distance between halfway and 20km is 1097.5 m and the distance between 40km and the goal is 2195m.
+```{r}
+# Create Speed variables 
+complete_table = mutate(complete_table, 
+                        Speed42_40=2195/as.numeric(difftime(K42,K40,units="mins")),
+                        Speed40_35=1000*5/as.numeric(difftime(K40,K35,units="mins")),
+                        Speed35_30=1000*5/as.numeric(difftime(K35,K30,units="mins")),
+                        Speed30_25=1000*5/as.numeric(difftime(K30,K25,units="mins")),
+                        Speed25_21=1000*4/as.numeric(difftime(K25,K21,units="mins")),
+                        Speed21_20=1097.5/as.numeric(difftime(K21,K20,units="mins")),
+                        Speed20_15=1000*5/as.numeric(difftime(K20,K15,units="mins")),
+                        Speed15_10=1000*5/as.numeric(difftime(K15,K10,units="mins")),
+                        Speed10_5=1000*5/as.numeric(difftime(K10,K5,units="mins")),
+                        Speed5_0=1000*5/as.numeric(difftime(K5,
+                                                  as.POSIXct("2016-12-09 00:00:00","Hongkong"),units="mins"))
+)
+```
+
+
+```{r, include=FALSE}
+# Group the Overall Ranking
+complete_table$RankGroup <- vector(mode="numeric",length = nrow(complete_table))
+for (i in 1:nrow(complete_table)) {
+  if (0<= complete_table$PlaceOverall[i]&complete_table$PlaceOverall[i]<=10000) {complete_table$RankGroup[i]=1}
+  else if (complete_table$PlaceOverall[i]&complete_table$PlaceOverall[i]<=20000) {complete_table$RankGroup[i]=2}
+  else if (complete_table$PlaceOverall[i]&complete_table$PlaceOverall[i]<=30000) {complete_table$RankGroup[i]=3}
+  else if (complete_table$PlaceOverall[i]&complete_table$PlaceOverall[i]<=40000) {complete_table$RankGroup[i]=4}}
+complete_table$RankGroup <- as.factor(complete_table$RankGroup)
+```
+
+After rearranging the completed dataset, it is ready for data exploratory analysis. 
+```{r}
+# rearrange the order
+complete_table <- complete_table[,c(1,2,3,4,28,5,6,7,8,9,10,11,12,13,14,15,16,17,27,26,25,24,23,22,21,20,19,18)]
+```
+
+
+```{r, include=FALSE, message=FALSE}
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+library(plotly)
+
+# initializing the complete_data from csv file after we have cleaned the data
+complete_table <- read.csv("complete_table.csv",stringsAsFactors = F)
+complete_table<- complete_table[,-1]
+
+# define the time record as POSIXct
+for (i in 9:18) {
+  complete_table[,i] <- as.POSIXct(complete_table[,i], format="%Y-%m-%d %H:%M:%S",tz="Hongkong")
+}
+
+# Define the nominal variables as factor
+complete_table[,3] <- as.factor(complete_table[,3])
+complete_table[,4] <- as.factor(complete_table[,4])
+complete_table[,5] <- as.factor(complete_table[,5])
+
+# create a function for melting the data frame into speed 
+speed_melt <- function(data)  {
+melt_data <- melt(data, 
+                  id.vars = c("RunnerNo","Name","Gender","Category","RankGroup","PlaceOverall","PlaceGender","PlaceCategory"), 
+                  measure.vars = c("Speed5_0","Speed10_5", "Speed15_10","Speed20_15",
+                                   "Speed21_20","Speed25_21","Speed30_25","Speed35_30","Speed40_35","Speed42_40"))
+colnames(melt_data)[9] <- "Distance"
+colnames(melt_data)[10] <- "Speed"
+melt_data$Distance <- as.character(melt_data$Distance)
+melt_data$Distance <- sapply(melt_data$Distance, function(x) 
+  if      (x == "Speed5_0")   {x =5}
+  else if (x == "Speed10_5")  {x =10}
+  else if (x == "Speed15_10") {x =15}
+  else if (x == "Speed20_15") {x =20}
+  else if (x == "Speed21_20") {x =21}
+  else if (x == "Speed25_21") {x =25}
+  else if (x == "Speed30_25") {x =30}
+  else if (x == "Speed35_30") {x =35}
+  else if (x == "Speed40_35") {x =40}
+  else if (x == "Speed42_40") {x =42} )
+return(melt_data)
+}
+
+# store the data set                             
+speed_table <- speed_melt(complete_table)                     
+                             
+
+
+
+
+
+
+# create a speed interval graph for each Ranking group
+Distance <- c(5,10,15,20,21,25,30,35,40,42)
+Ranking1 <-   c(mean(filter( complete_table ,RankGroup==1)[,19]),
+                mean(filter( complete_table ,RankGroup==1)[,20]),
+                mean(filter( complete_table ,RankGroup==1)[,21]),
+                mean(filter( complete_table ,RankGroup==1)[,22]),
+                mean(filter( complete_table ,RankGroup==1)[,23]),
+                mean(filter( complete_table ,RankGroup==1)[,24]),
+                mean(filter( complete_table ,RankGroup==1)[,25]),
+                mean(filter( complete_table ,RankGroup==1)[,26]),
+                mean(filter( complete_table ,RankGroup==1)[,27]),
+                mean(filter( complete_table ,RankGroup==1)[,28]))
+
+Ranking2 <-   c(mean(filter( complete_table ,RankGroup==2)[,19]),
+                mean(filter( complete_table ,RankGroup==2)[,20]),
+                mean(filter( complete_table ,RankGroup==2)[,21]),
+                mean(filter( complete_table ,RankGroup==2)[,22]),
+                mean(filter( complete_table ,RankGroup==2)[,23]),
+                mean(filter( complete_table ,RankGroup==2)[,24]),
+                mean(filter( complete_table ,RankGroup==2)[,25]),
+                mean(filter( complete_table ,RankGroup==2)[,26]),
+                mean(filter( complete_table ,RankGroup==2)[,27]),
+                mean(filter( complete_table ,RankGroup==2)[,28]))
+
+Ranking3 <-   c(mean(filter( complete_table ,RankGroup==3)[,19]),
+                mean(filter( complete_table ,RankGroup==3)[,20]),
+                mean(filter( complete_table ,RankGroup==3)[,21]),
+                mean(filter( complete_table ,RankGroup==3)[,22]),
+                mean(filter( complete_table ,RankGroup==3)[,23]),
+                mean(filter( complete_table ,RankGroup==3)[,24]),
+                mean(filter( complete_table ,RankGroup==3)[,25]),
+                mean(filter( complete_table ,RankGroup==3)[,26]),
+                mean(filter( complete_table ,RankGroup==3)[,27]),
+                mean(filter( complete_table ,RankGroup==3)[,28]))
+
+Ranking4 <-   c(mean(filter( complete_table ,RankGroup==4)[,19]),
+                mean(filter( complete_table ,RankGroup==4)[,20]),
+                mean(filter( complete_table ,RankGroup==4)[,21]),
+                mean(filter( complete_table ,RankGroup==4)[,22]),
+                mean(filter( complete_table ,RankGroup==4)[,23]),
+                mean(filter( complete_table ,RankGroup==4)[,24]),
+                mean(filter( complete_table ,RankGroup==4)[,25]),
+                mean(filter( complete_table ,RankGroup==4)[,26]),
+                mean(filter( complete_table ,RankGroup==4)[,27]),
+                mean(filter( complete_table ,RankGroup==4)[,28]))
+
+mean_time <- data.frame(Distance,Ranking1,Ranking2,Ranking3,Ranking4)
+
+mean_time <- melt(mean_time,
+                  id.vars = c("Distance"))
+```
+
+
+# 3 Methodology
+
+There are 2 things special about this research:
+
+First, we will try to look at runners' variation in speed for different interval. On one hand, we will try to identify something in common for all runners. On the other hand, we will try to evaluate some of the ways for speed allocation over intervals to see if there are any correlations between runners' ranking and their speed allocation.
+
+Second, all runners will be roughly grouped into 4 levels on the basis of overall ranking and we will try to perform comparison by these 4 levels The grouping details are as follows:
+
+* Q1 Runners: Runners with overall ranking from 1-100000
+* Q2 Runners: Runners with overall ranking from 10001-20000
+* Q3 Runners: Runners with overall ranking from 20001-30000
+* Q4 Runners: The remaining runners
+
+Those runners in top 10000 ranking will be classified as the best runners. Those runners with ranking 30001 or lower will be classified as the worst among the 4 levels. Note that the variable after level grouping should be an ordinal variable. However, we are not going to perform any statistical modeling so it will not affect much on the visualization even if the variable is defined as a nominal variable. Therefore, the variable will be simply defined as a nominal variable and treated as a factor. 
+
+In addition, the runners will be referred as "Q1 runners", "Q2 runner", "Q3 runner", "Q4 runner" for simplicity.
+
+
+
+# 4 Result
+
+After the dataset has been cleaned and tidied, we could start performing some data exploratory analysis. We could begin with analysis on the basis of demographic features. 
+
+The boxplot below offers a summary of the speed distributions for runners of different age groups sorted by gender at a particular interval. The boxplot is interactive in a way that you could adjust the intervals by a slider.
+```{r, echo=FALSE}
+library(shiny)
+
+sliderInput("km0",h6("Select an Interval (km)"),
+                    min=5,max=42,step=5,value=c(5),ticks=FALSE,
+                      animate=animationOptions(interval=2300,loop=TRUE))
+
+
+    km0 <- reactive({
+      if      (input$km0 == 5)  {19}
+      else if (input$km0 == 10) {20}
+      else if (input$km0 == 15) {21}
+      else if (input$km0 == 20) {22}
+      else if (input$km0 == 25) {24}
+      else if (input$km0 == 30) {25}
+      else if (input$km0 == 35) {26}
+      else if (input$km0 == 40) {27}
+      else if (input$km0 == 42) {28}
+    })
+
+renderPlot({
+  ggplot(complete_table,aes(x=Category,y= complete_table[,km0()] ,color=Gender)) + 
+  geom_boxplot(position = position_dodge(width = 0),alpha=0.3) +
+  labs(x="Age Group",y="Speed (Metres/Minute)") + theme(legend.position="bottom") + 
+    scale_color_manual(values=c("#CC79A7", "#0072B2")) +
+    ggtitle(paste("Speed at the Interval of ",input$km0,"km Grouped by Age and Gender",sep=""))
+})
+```
+We could see from the boxplot that runners from youngest age (i.e 18-39) have the highest variation in speed for every intervals. The variation in speed increases with intervals for both male runners and female runners in the age range of 18-59. Also, for a particular age group, male runners tend to have higher variation in speed than female runners. In terms of median, those runners at the age of 40-44 has the highest speed than other age groups. It is true for both male runners and female runners. 
+
+Boxplot also shows that male runners have higher speed than female runners in terms of median for all age group and every intervals. We would like to see if the difference between the speed is significant. To quickly evaluate if the difference is significance, we could visualize the density of speed for both male runners and female runners at a particular age group and particular interval. If the density is approximately normal, the median of speed is approximately equivalent to the mean of speed so that the difference could be assumed to be significant.
+
+An intereactive density plot is shown below with dynamic change on interval and age group.
+```{r echo=FALSE}
+selectInput("age5",h6("Select Age Group"),
+                choices=c("18-39","40-44","45-49","50-54","55-59","60-64","65-69","70+"))
+
+sliderInput("km8",h6("Select an Interval (km)"),
+                    min=5,max=42,step=5,value=c(5),ticks=FALSE,
+                      animate=animationOptions(interval=2300,loop=TRUE))
+    km8 <- reactive({
+      if      (input$km8 == 5)  {19}
+      else if (input$km8 == 10) {20}
+      else if (input$km8 == 15) {21}
+      else if (input$km8 == 20) {22}
+      else if (input$km8 == 25) {24}
+      else if (input$km8 == 30) {25}
+      else if (input$km8 == 35) {26}
+      else if (input$km8 == 40) {27}
+      else if (input$km8 == 42) {28}
+    })
+    
+    z <- reactive({ complete_table[complete_table$Category == input$age5,] })
+      
+
+renderPlot({ggplot(z(),aes(x=z()[,km8()] ,fill=Gender,color=Gender)) + 
+  geom_density(alpha=0.8) +
+  labs(x="Speed (Metres/Minute)",y="Frequency") + theme(legend.position="bottom") + 
+  scale_color_manual(values=c("#CC79A7", "#0072B2")) +  
+  scale_fill_manual(values=c("#CC79A7", "#0072B2")) +
+  ggtitle(paste("Speed Distribution for Age Group of ",
+                input$age5," at the Interval of ",input$km8," km",sep=""))
+})
+```
+For all age groups, the shapes of the speed density for both male runners and female runners are highly fluctuate across intervals. In addition, there are more than one peak for most of the density plots. Therefore, it is not feasible to assume that the density of speed for most types of runners is normally distributed. Hence, there is no strong evidence from this stage to assert that the difference in speed between male runners and female runners are significant for every age groups and intervals. Having said that, we could assert that some differences in speed are very likely to be significant for some age groups and intervals because they look approximately normal, or they have very few overlapping area, or the density plot of the male runners looks similar with that of female runners.
+
+
+The line plot below illustrates the variation of speed on average throughout the intervals, grouped by levels of ranking. The line on the top refers to "Q1 runners" with highest average speed throughout every intervals; the line at the bottom refers to the "Q4 runners" with the lowest average speed throughout the race.
+
+```{r, echo = FALSE}
+# hide the code and displays the result
+ggplot(mean_time,aes(x=Distance,y=value)) + 
+  geom_line(size=0.9,aes(color=mean_time$variable)) +
+  geom_point(size=3,color="gray15")+labs(x="Distance (Km)", y="Average Speed (Metres/Min)") +
+  ggtitle("Average Speed in Different Phrase") + theme(legend.position="none")
+```
+
+We shall look into some features that all levels of runners commonly share. The most noticeable one should be the gradual reduction in average speed after the midway of the race. While the average speed does not have much fluctuation before the midway except "Q4 runners", all types of runners invariably start dropping their speed on average after the midway. "Q4 runners" drop their average speed at the earliest stage, followed by "Q3 runners". "Q1 runners" and "Q2 runners" speed up on average at the beginning after the halfway, but their average speed start to drop after that.
+
+With the average speed keep decreasing after midway, we could notice a trough at the interval between 35km and 40km. It means all types of runners have the lowest average speed during the interval. "Q4 runners" and "Q3 runners" experience the lowest average speed earlier than "Q1 runners" and "Q2 runners". 
+
+After the trough of average of speed, there is a dramatic surge in speed on average at the last 2km of the race. The trend gives us a message that runners of all ranking levels try to splint at the end in general. The splint gives us some hindsight on the speed allocation in common for most of the runners. Surprisingly, "Q1 runners" has the lowest average increase in speed at the end.  
+
+We can see from the line plot that runners with better ranking, specifically "Q1 runners" and "Q2 runners", tend to maintain steady speed before halfway of the race. Both "Q1 runners" and "Q2 runners" have similar performance in terms of stability before the halfway. For runners with lower ranking, specifically "Q3 runners" and "Q4 runners", their average speed starts dropping before halfway, with "Q4 runners" dropping highest extent of speed on average.
+
+The line plot above on average speed over different intervals gives us a brief picture of different levels of runner in general. After we have a brief picture, we would like to look at how different runners in the same levels of ranking vary their speed during the race. In order to look closer into how speed allocation differs across and between different ranking levels of runners, we would explore the speed distribution of all runners throughout every intervals. The plot below is an interavtive scatter point showing the speed of all runners for a given interval. You could inspect the speeds of all runners in different intervals by changing the slider above the plot. The interval inspected will be shifted according to your adjustment in slider. The play button below the slider enables the plot to be shown in an animated way by sequence. The color of a point represents a runner's gender.
+
+```{r, echo = FALSE}
+sliderInput("km",h6("Select an Interval (km)"),
+                    min=5,max=42,step=5,value=c(5),ticks=FALSE,
+                      animate=animationOptions(interval=2300,loop=TRUE))
+
+# sliderInput("p",h6("Select a Ranking Range"),
+#                     min=1,max=40000,step=5000,value=c(1,40000))
+# 
+# checkboxGroupInput("age", label = h4("Select Age Range"),   
+#                    choices=c("All","18-39","40-44","45-49","50-54","55-59","60-64","60-64","65-69","70+"),
+#                                         selected="All")
+
+    km <- reactive({
+      if      (input$km == 5)  {19}
+      else if (input$km == 10) {20}
+      else if (input$km == 15) {21}
+      else if (input$km == 20) {22}
+      else if (input$km == 25) {24}
+      else if (input$km == 30) {25}
+      else if (input$km == 35) {26}
+      else if (input$km == 40) {27}
+      else if (input$km == 42) {28}
+    })
+
+           
+  # x <- reactive({
+  #   filter(complete_table,complete_table$Category %in% input$age,
+  #          complete_table$PlaceOverall %in% seq(input$p[1],input$p[2]))
+  # })
+    
+
+renderPlot({ 
+  ggplot(complete_table,aes(x=PlaceOverall,y=complete_table[,km()],color=Gender))+geom_point()+
+  scale_y_continuous(limits = c(0, 400))+labs(x="Overall Ranking",y="Speed (Metres/Min)") + 
+  ggtitle(paste("Speed Allocations for All Runners at the Interval of",input$km,"Km",sep=" "))
+})
+```
+
+There are three things noticeable from the interactive plot:
+
+Firstly, there is a consistent sharp tip on the left terminal of the scatter plot for all intervals. They refer to the best runners among the top-level ones. It is shown that these runners consistently maintain a supreme level of speed with at least 300m/min throughout the race. These runners are significantly small proportion of the population. They belong to the exordinary cases
+
+Second, the speeds is the most scattered at the last stage of the marathon for all ranking levels. The condensed area is shifted upward in comparison with the preceding interval, it is consistent with our previous finding because it shows that runners tend to spend up at the end on average. Besides the upward shift compared with preceding interval, it should be noted that the points are getting more scattered at the end. While there are many points scattered above the condensed area, there are also considerable amount of points scattered below, with "Q1 runners" having the most.
+
+The finding gives us another possibility of the speed allocation for a runner. Apart from a splint at the end, there is a considerable amount of runners who instead slow down their speed at the end. Unexpectedly, there are more runners on high levels perform this way than runners on low levels.
+
+Third, female runners have a significant comeback after the halfway of the race and it is particularly true for the rival in lower ranking levels. At the beginning of the race, the condensed area has a blue color on top of the left and a red color at the bottom of the right. It shows that male runners dominantly have a better performance than female runner at the beginning. Female runners are in general lagging behind. However, as the race continues, red color gradually shift upwards in the condensed area. At the end, red color is dominant on the top of the right. It shows that there are many female runners having higher speed than men runners after the halfway.
+
+With an aim to look closer at how the female runners and male runners compete against each other in the lower ranking level, we shall subset the interactive scatter plot above so that only "Q3 runners" and "Q4 runners" remain.
+
+```{r, echo = FALSE}
+sliderInput("km2",h6("Select an Interval (km)"),
+                    min=5,max=42,step=5,value=c(5),ticks=FALSE,
+                      animate=animationOptions(interval=2300,loop=TRUE))
+
+
+    km2 <- reactive({
+      if      (input$km2 == 5)  {19}
+      else if (input$km2 == 10) {20}
+      else if (input$km2 == 15) {21}
+      else if (input$km2 == 20) {22}
+      else if (input$km2 == 25) {24}
+      else if (input$km2 == 30) {25}
+      else if (input$km2 == 35) {26}
+      else if (input$km2 == 40) {27}
+      else if (input$km2 == 42) {28}
+    })
+
+    x <- reactive({complete_table[complete_table$RankGroup == 3 | complete_table$RankGroup ==4,]})
+
+
+renderPlot({ 
+  ggplot(x(),aes(x=x()[,6],y=x()[,km2()],color=Gender))+geom_point()+
+  scale_y_continuous(limits = c(0, 400))+labs(x="Overall Ranking",y="Speed (Metres/Min)") + 
+  ggtitle(paste("Speed Allocations for Amateurs at the Interval of",input$km2,"Km",sep=" "))
+})
+```
+It is shown that the speed of female runners start excelling men runners from the interval of 25km. Between 35km and 40km, speed of female runners is dominantly higher than that of male runners. 
+
+We should note that the plot only shows us the speed of the runners. We could not tell from the plot if most of female runners have surpassed male runners in position after the halfway even though their speed dominantly excels male runners. However, the finding at least could serve as an evidence that a good performance at the beginning does not necessarily lead to a good performance at the end, especailly for runners of amateur level.
+
+It is a common belief that age has a significant influence on our physical capacity. With this in mind, it is intuitive that youngsters should have better running performance than the elderly. However, there are always some exceptional cases. To illustrate it, we would like to compare the speed of the youngest group with that of the oldest age throughout the intervals. 
+```{r,echo=FALSE}
+sliderInput("km3",h6("Select an Interval (km)"),
+                    min=5,max=42,step=5,value=c(5),ticks=FALSE,
+                      animate=animationOptions(interval=2300,loop=TRUE))
+    km3 <- reactive({
+      if      (input$km3 == 5)  {19}
+      else if (input$km3 == 10) {20}
+      else if (input$km3 == 15) {21}
+      else if (input$km3 == 20) {22}
+      else if (input$km3 == 25) {24}
+      else if (input$km3 == 30) {25}
+      else if (input$km3 == 35) {26}
+      else if (input$km3 == 40) {27}
+      else if (input$km3 == 42) {28}
+    })
+
+y <- reactive({complete_table[complete_table$Category == "18-39"|complete_table$Category == "70+",]})
+
+renderPlot({ 
+  ggplot(y(),aes(x=y()[,6],y=y()[,km3()],color=Category))+geom_point()+
+  scale_y_continuous(limits = c(0, 400))+labs(x="Overall Ranking",y="Speed (Metres/Min)") + 
+  ggtitle(paste("Speed Allocations for Youngest Runners and Oldest Runners at the Interval of",input$km2,"Km",sep=" "))+scale_color_manual(values=c("#66CC99", "red"))
+})
+
+```
+
+The youngest age group is 18-39 while the oldest age group is 70 or above. Oldest ones are generally placed in "Q4", but there are no lack of elder runners in "Q2" and "Q3". It means that even the oldest runners could possibly get a high ranking levels. The most remarkable should be the elder runner placing in "Q1". He does not only get a "Q1 rank", he even reaches his highest speed at the end and the speed is exordinarily high that only a few of the younger runners could attain that level of speed. Age does limit our physical capacity, but it does not totally deny your possibility to be a good runner.
+
+
+# 5 Conclusion
+We could see that even though there are many features all levels of runners commonly share, top level runners differentiate themselves from amateurs in terms of higher steability. Although all levels of runners are invariably subject to decrease in speed after halfway of the race, top runners remain a steady speed on average before the halfway. 
+
+Whith different ways of speed allocation inspected, a splint at the end is probably a popular practice for all levels of runners.
+
+From the example of female runners and male runners in amateur level, we could see that even though you run fast at the beginning, it does not necessarily entails that you could maintain the good performance at the end. Similarly, even if you are lagging behind at the beginning, it is still likely that you could surpass those that are way in front of you. 
+
+We could hardly ignore the correlation between one's running performance and one's demographic features, but they do not deny your possibility to be a good runner. Even female could run faster than male and possibly surpass them. Even an oldest runner could run faster than most of the younger runners. When there is a will, there is a way.
+
+Indeed, the conclusion made from London Marathon may not be applicable for other Marathon because there are many factors varying for each Marathon competitions and these factors may have an influence on runners' speed allocation. It should be admitted that this research does not take factors like temperature, elevations of the track for different intervals and the atmosphere into consideration for the analysis, which may render its findings unlikely to be generally applicable. 
+
+# 6 Acknowledgement
+This project is to fulfill a requirement of Stat3622 Data Visualization course in the University of Hong Kong.
+I would thank Dr. Zhang and tutor Jia for their advice and guidance offered to this research.
+
+# 7 References:
+1. Virgin Money London Marathon. (2016) Tracking & Results 2016. Retrieved from Virgin Money London Marathon Website: <http://results-2016.virginmoneylondonmarathon.com/2016/?pid=list>
+2. Exploratory Analysis with the HK Marathon Dataset. (2016) Retrieved from Kaggle Website:
+<https://www.kaggle.com/thibalbo/d/melvincheung/hong-kong-marathon-2016/exploratory-analysis-with-the-hk-marathon-dataset>
+
