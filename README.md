@@ -16,18 +16,18 @@ _download the scripts server.R and ui.R._
 _You could also have a look at my research reports by downloading the rmarkdown script markdown_report.Rmd enclosed in RMarkdown Report folder_
 
 _The following libraries is required for the RMarkdown Report:_
-_library(dplyr)_
-_library(ggplot2)_
-_library(reshape2)_
-_library(plotly)_
+1. library(dplyr)
+2. library(ggplot2)
+3. library(reshape2)
+4. library(plotly)
 
 _The following libraries is required for the ShinyApp:_
-_library(shinydashboard)_
-_library(shiny)_
-_library(dplyr)_
-_library(ggplot2)_
-_library(reshape2)_
-_library(plotly)_
+1. library(shinydashboard)
+2. library(shiny)
+3. library(dplyr)
+4. ibrary(ggplot2)
+5. library(reshape2)
+6. library(plotly)
 
 RMarkdown Report is the updated version of my project. So there are some differences between the findings in Shiny and findings in RMarkdown Report.
 
