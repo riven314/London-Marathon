@@ -13,7 +13,7 @@ _London Marathon 2016 (http://results-2016.virginmoneylondonmarathon.com/2016/?p
 ###How to Open Run my Program?
 _You could either download the script ShinyApp(Marathon).R or_ 
 _download the scripts server.R and ui.R._
-_You could also have a look at my research reports by downloading the rmarkdown script markdown_report.Rmd enclosed in RMarkdown Report folder_
+_You could also have a look at my research reports by downloading the rmarkdown script markdown_report.Rmd and markdown_report.html, together with all the csv data files_
 
 _The following libraries is required for the RMarkdown Report:_
 1. library(dplyr)
