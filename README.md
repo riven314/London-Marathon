@@ -11,17 +11,17 @@ This project is my individual project to fulfill a requirement of the course STA
 _London Marathon 2016 (http://results-2016.virginmoneylondonmarathon.com/2016/?pid=list)_
 
 ###How to Open Run my Program?
-_You could either download the script ShinyApp(Marathon).R or 
- download the scripts server.R and ui.R.
- You could also have a look at my research reports by downloading the rmarkdown script markdown_report.Rmd enclosed in RMarkdown Report folder
+_You could either download the script ShinyApp(Marathon).R or_ 
+_download the scripts server.R and ui.R._
+_You could also have a look at my research reports by downloading the rmarkdown script markdown_report.Rmd enclosed in RMarkdown Report folder_
 
-The following libraries is required for the RMarkdown Report:
+_The following libraries is required for the RMarkdown Report:_
 library(dplyr)
 library(ggplot2)
 library(reshape2)
 library(plotly)
 
-The following libraries is required for the ShinyApp:
+_The following libraries is required for the ShinyApp:_
 library(shinydashboard)
 library(shiny)
 library(dplyr)
